@@ -15,7 +15,7 @@ class DevConfig(Config):
 
 
 class TestConfig(Config):
-    Testing = True
+    TESTING = True
 
 
 class ProdConfig(Config):
