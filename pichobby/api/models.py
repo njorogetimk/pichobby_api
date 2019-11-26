@@ -110,3 +110,24 @@ class Comment(db.Model):
 
     def __repr__(self):
         return '<Comment by {}>'.format(self.guestname)
+
+
+# The Schemas for serialization
+class AdminSchema(ma.Schema):
+    class Meta:
+        fields = ('name', 'username', 'email', 'password')
+
+
+class GuestSchema(ma.Schema):
+    class Meta:
+        fields = ('name', 'guestname', 'email')
+
+
+class PicSchema(ma.Schema):
+    class Meta:
+        fields = ('pic_id', 'link', 'date', 'likes', 'dislikes')
+
+
+class CommentSchema(ma.Schema):
+    class Meta:
+        fields = ('comment', 'guestname', 'date', 'pic_id')
