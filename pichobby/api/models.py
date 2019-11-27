@@ -82,18 +82,21 @@ class Pic(db.Model):
     def add_dislike(self):
         self.dislikes += 1
 
+    def __repr__(self):
+        return '<Pic {}>'.format(self.pic_id)
+
 
 class Comment(db.Model):
     """
     This is the comment section
-    comment: comment on the image
+    ctext: comment text on the image
     guestname: who commented
     date: date and time of the comment
     pic_id: image to which the comment belongs to
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    comment = db.Column(db.Text)
+    ctext = db.Column(db.Text)
     guest = db.relationship('Guest', backref=db.backref(
         'guest', lazy='dynamic'
     ))
@@ -102,9 +105,9 @@ class Comment(db.Model):
     pic = db.relationship('Pic', backref=db.backref('pic', lazy='dynamic'))
     pic_id = db.Column(db.String, db.ForeignKey('pic.pic_id'))
 
-    def __init__(self, comment, guestname, pic_id):
-        self.comment = comment
-        self.guestname = Guest.query.filter_by(guestname=guestname).first()
+    def __init__(self, ctext, guestname, pic_id):
+        self.ctext = ctext
+        self.guest = Guest.query.filter_by(guestname=guestname).first()
         self.pic = Pic.query.filter_by(pic_id=pic_id).first()
         self.date = posttime.utcnow()
 
@@ -130,4 +133,4 @@ class PicSchema(ma.Schema):
 
 class CommentSchema(ma.Schema):
     class Meta:
-        fields = ('comment', 'guestname', 'date', 'pic_id')
+        fields = ('ctext', 'guestname', 'date', 'pic_id')
