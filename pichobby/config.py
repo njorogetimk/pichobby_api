@@ -18,18 +18,18 @@ class DevConfig(Config):
     host = '@localhost'
     dbase = '/pichobby'
     localPostgress = protocol+password+host+dbase
-    SQLACHEMY_DATABASE_URI = os.environ.get('DEV_DB_URI') or localPostgress
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DB_URI') or localPostgress
 
 
 class TestConfig(Config):
     TESTING = True
-    SQLACHEMY_DATABASE_URI = os.environ.get('TEST_DB_URL') or 'sqlite://'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DB_URL') or 'sqlite://'
 
 
 class ProdConfig(Config):
     DEBUG = False
     sqldb = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
-    SQLACHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or sqldb
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or sqldb
 
 
 config = {
