@@ -1,13 +1,11 @@
 from flask import jsonify, request
 from pichobby.api import picapi
 from pichobby.api.models import db
-from pichobby.api.models import Pic, Guest, Comment
-from pichobby.api.models import AdminSchema, GuestSchema, PicSchema
-from pichobby.api.models import CommentSchema
+from pichobby.api.models import Pic, User, Comment
+from pichobby.api.models import UserSchema, PicSchema, CommentSchema
 
 # Initialize the Schemas
-adminSchema = AdminSchema()
-guestSchema = GuestSchema()
+userSchema = UserSchema()
 picSchema = PicSchema()
 picsSchema = PicSchema(many=True)
 commentSchema = CommentSchema()
@@ -51,27 +49,28 @@ def get_pic(pic_id):
         return jsonify(msg), 404
 
 
-@picapi.route('/add/guest', methods=['POST'])
-def add_guest():
+@picapi.route('/add/user', methods=['POST'])
+def add_user():
     try:
         name = request.json['name']
-        guestname = request.json['guestname']
+        username = request.json['username']
         email = request.json['email']
-        guest = Guest(name, guestname, email)
-        db.session.add(guest)
+        password = request.json['password']
+        user = User(name, username, email, password)
+        db.session.add(user)
         db.session.commit()
-        msg = {"Success": "Guest {} added".format(guestname)}
+        msg = {"Success": "User {} added".format(username)}
         return jsonify(msg), 201
     except Exception:
         msg = {"Error": "Not created"}
         return jsonify(msg), 500
 
 
-@picapi.route('/guest/<guestname>', methods=['GET'])
-def get_guest(guestname):
+@picapi.route('/user/<username>', methods=['GET'])
+def get_user(username):
     try:
-        guest = Guest.query.filter_by(guestname=guestname).first()
-        return guestSchema.jsonify(guest), 200
+        user = User.query.filter_by(username=username).first()
+        return userSchema.jsonify(user), 200
     except Exception:
         msg = {"Error": "Not found"}
         return jsonify(msg), 404
@@ -81,9 +80,12 @@ def get_guest(guestname):
 def post_comment():
     try:
         ctext = request.json['ctext']
-        guestname = request.json['guestname']
+        username = request.json['username']
         pic_id = request.json['pic_id']
-        comment = Comment(ctext, guestname, pic_id)
+        pic = Pic.query.filter_by(pic_id=pic_id).first()
+        if not pic:
+            return jsonify({"Error": "Invalid pic_id"}), 403
+        comment = Comment(ctext, username, pic_id)
         db.session.add(comment)
         db.session.commit()
         msg = {"Success": "Comment posted"}
@@ -97,8 +99,8 @@ def post_comment():
 def get_pic_comments(pic_id):
     try:
         comments = Comment.query.filter_by(pic_id=pic_id).all()
-        results = commentSchema.dump(comments)
-        return jsonify(results), 200
+        results = commentsSchema.dump(comments)
+        return jsonify({pic_id: results}), 200
     except Exception:
         msg = {"Error": "No Comment"}
         return jsonify(msg), 404

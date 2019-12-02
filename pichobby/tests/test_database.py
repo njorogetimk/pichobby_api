@@ -1,6 +1,6 @@
 import unittest
 from pichobby import create_app, db
-from pichobby.api.models import Admin, Guest, Pic, Comment
+from pichobby.api.models import User, Pic, Comment
 
 
 class BasicTestCase(unittest.TestCase):
@@ -15,9 +15,11 @@ class BasicTestCase(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
-    def test_Admin(self):
-        tim = Admin('tim', 'njosh', 'm@r.co', '123')
-        db.session.add(tim)
+    def test_User(self):
+        admin = User('tim', 'tim', 'm@r.co', '123', True)
+        guest = User('njosh', 'njosh', 'r@g.com', '345')
+        db.session.add(admin)
+        db.session.add(guest)
         try:
             db.session.commit()
             success = True
@@ -26,40 +28,6 @@ class BasicTestCase(unittest.TestCase):
             success = False
             msg = e
         self.assertTrue(success, msg)
-
-    def test_Guest(self):
-        kin = Guest('kin', 'kin', 'k@e')
-        usernameDup = Guest('ki', 'kin', 'ke@e')
-        emailDup = Guest('ki', 'kino', 'k@e')
-        db.session.add(kin)
-        try:
-            db.session.commit()
-            success = True
-            msg = ''
-        except Exception as e:
-            success = False
-            msg = e
-        self.assertTrue(success, msg)
-
-        db.session.add(usernameDup)
-        try:
-            # Has created a username duplicate
-            db.session.commit()
-            noDuplicate = False
-        except Exception:
-            # Has not created a username duplicate
-            noDuplicate = True
-        self.assertTrue(noDuplicate, msg="Has created a usename duplicate")
-
-        db.session.add(emailDup)
-        try:
-            # Has created an email duplicate
-            db.session.commit()
-            noDuplicate = False
-        except Exception:
-            # Has not created an email duplicate
-            noDuplicate = True
-        self.assertTrue(noDuplicate, msg="Has created an email duplicate")
 
     def test_Pic(self):
         pic = Pic('sunset1', 'tohere')
@@ -81,11 +49,11 @@ class BasicTestCase(unittest.TestCase):
         self.assertTrue(mypic.dislikes > 0)
 
     def test_Comment(self):
-        guestname = 'kin'
+        username = 'kin'
         pic_id = 'sunset1'
-        kin = Guest('kin', guestname, 'k@e')
+        kin = User('kin', username, 'k@e', '123')
         pic = Pic(pic_id, 'tohere')
-        comment = Comment('here', guestname, pic_id)
+        comment = Comment('here', username, pic_id)
         db.session.add(kin)
         db.session.add(pic)
         try:

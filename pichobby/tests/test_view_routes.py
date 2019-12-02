@@ -42,23 +42,25 @@ class BasicTestCase(unittest.TestCase):
         rt = self.client.get('pic/myid')
         self.assertEqual(rt.status_code, 200)
 
-    def test_guest_add(self):
-        guest = {
-            "name": "mgeni", "guestname": "mgeni", "email": "r@e"
+    def test_user_add(self):
+        user = {
+            "name": "mgeni", "username": "mgeni", "email": "r@e",
+            "password": "123"
         }
-        rt = self.client.post('/add/guest', json=guest)
+        rt = self.client.post('/add/user', json=user)
         self.assertEqual(rt.status_code, 201)
 
-    def test_guest_get(self):
-        self.test_guest_add()
-        rt = self.client.get('/guest/mgeni')
+    def test_user_get(self):
+        self.test_user_add()
+        rt = self.client.get('/user/mgeni')
         self.assertEqual(rt.status_code, 200)
 
     def test_comment_post(self):
-        guest = {
-            "name": "mgeni", "guestname": "mgeni", "email": "r@e"
+        user = {
+            "name": "mgeni", "username": "mgeni", "email": "r@e",
+            "password": "123"
         }
-        rt1 = self.client.post('/add/guest', json=guest)
+        rt1 = self.client.post('/add/user', json=user)
         self.assertEqual(rt1.status_code, 201)
 
         pic = {
@@ -68,21 +70,22 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(rt2.status_code, 201)
 
         comment = {
-            "ctext": "no comment", "guestname": "mgeni", "pic_id": "myid"
+            "ctext": "no comment", "username": "mgeni", "pic_id": "myid"
         }
         rt3 = self.client.post('/post/comment', json=comment)
         self.assertEqual(rt3.status_code, 201)
 
     def test_comment_get(self):
         self.test_comment_post()
-        rt = self.client.get('/pic/<pic_id>/comments')
+        rt = self.client.get('/pic/myid/comments')
         self.assertEqual(rt.status_code, 200)
 
     def test_like_add(self):
-        guest = {
-            "name": "mgeni", "guestname": "mgeni", "email": "r@e"
+        user = {
+            "name": "mgeni", "username": "mgeni", "email": "r@e",
+            "password": "123"
         }
-        rt1 = self.client.post('/add/guest', json=guest)
+        rt1 = self.client.post('/add/user', json=user)
         self.assertEqual(rt1.status_code, 201)
 
         pic = {
@@ -95,10 +98,11 @@ class BasicTestCase(unittest.TestCase):
         self.assertEqual(rt3.status_code, 201)
 
     def test_dislike_add(self):
-        guest = {
-            "name": "mgeni", "guestname": "mgeni", "email": "r@e"
+        user = {
+            "name": "mgeni", "username": "mgeni", "email": "r@e",
+            "password": "123"
         }
-        rt1 = self.client.post('/add/guest', json=guest)
+        rt1 = self.client.post('/add/user', json=user)
         self.assertEqual(rt1.status_code, 201)
 
         pic = {
