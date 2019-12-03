@@ -24,7 +24,9 @@ class DevConfig(Config):
 
 class TestConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DB_URL') or 'sqlite://'
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    pth = 'sqlite:///' + os.path.join(basedir, 'test.sqlite')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DB_URL') or pth
 
 
 class ProdConfig(Config):
