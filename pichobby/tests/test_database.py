@@ -1,6 +1,6 @@
 import unittest
 from pichobby import create_app, db
-from pichobby.api.models import User, Pic, Comment
+from pichobby.api.models import User, Pic, Comment, PicLikes
 
 
 class BasicTestCase(unittest.TestCase):
@@ -41,13 +41,6 @@ class BasicTestCase(unittest.TestCase):
             msg = e
         self.assertTrue(success, msg)
 
-        # Tesitng likes and dislikes
-        mypic = Pic.query.filter_by(pic_id='sunset1').first()
-        mypic.add_like()
-        mypic.add_dislike()
-        self.assertTrue(mypic.likes > 0)
-        self.assertTrue(mypic.dislikes > 0)
-
     def test_Comment(self):
         username = 'kin'
         pic_id = 'sunset1'
@@ -65,6 +58,27 @@ class BasicTestCase(unittest.TestCase):
         except Exception as e:
             msg = e
             success = False
+        self.assertTrue(success, msg)
+
+    def test_Like(self):
+        username = 'kin'
+        pic_id = 'sunset1'
+        kin = User('kin', username, 'k@e', '123')
+        pic = Pic(pic_id, 'tohere')
+        db.session.add(kin)
+        db.session.add(pic)
+
+        try:
+            db.session.commit()
+            like = PicLikes(True, username, pic_id)
+            db.session.add(like)
+            db.session.commit()
+            success = True
+            msg = ''
+        except Exception as e:
+            msg = e
+            success = False
+
         self.assertTrue(success, msg)
 
 
