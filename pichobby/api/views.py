@@ -1,4 +1,5 @@
 from flask import jsonify, request
+from flask_jwt_extended import create_access_token
 from pichobby.api import picapi
 from pichobby.api.models import db
 from pichobby.api.models import Pic, User, Comment, PicLikes
@@ -132,9 +133,27 @@ def get_pic_likes(pic_id):
     try:
         piccheck = Pic.query.filter_by(pic_id=pic_id).first()
         if not piccheck:
-            return jsonify({"Error": "Failed"}), 403
+            return jsonify({"Error": "Failed"}), 400
         picLikes = PicLikes.query.filter_by(pic_id=pic_id).all()
         results = picLikesSchema.dump(picLikes)
         return jsonify({"{} likes and dislikes".format(pic_id): results})
     except Exception:
         return jsonify({"Error": "Failed to retrieve likes"}), 500
+
+
+@picapi.route('/login', methods=['POST'])
+def login():
+    try:
+        username = request.json.get('username', None)
+        password = request.json.get('password', None)
+        user = User.query.filter_by(username=username).first()
+        if not username or not user or not password:
+            return jsonify({"Message": "Invalid login parameters"}), 400
+        passcheck = user.verify_password(password)
+        if not passcheck:
+            return jsonify({"Message": "Invalid login parameters"}), 400
+
+        access_token = create_access_token(identity=username)
+        return jsonify(access_token), 200
+    except Exception:
+        return jsonify({"Message": "Failed Login"}), 400
