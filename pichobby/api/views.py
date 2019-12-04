@@ -1,8 +1,9 @@
 from flask import jsonify, request
 from pichobby.api import picapi
 from pichobby.api.models import db
-from pichobby.api.models import Pic, User, Comment
-from pichobby.api.models import UserSchema, PicSchema, CommentSchema
+from pichobby.api.models import Pic, User, Comment, PicLikes
+from pichobby.api.models import UserSchema, PicSchema
+from pichobby.api.models import CommentSchema, PicLikeSchema
 
 # Initialize the Schemas
 userSchema = UserSchema()
@@ -10,6 +11,8 @@ picSchema = PicSchema()
 picsSchema = PicSchema(many=True)
 commentSchema = CommentSchema()
 commentsSchema = CommentSchema(many=True)
+picLikeSchema = PicLikeSchema()
+picLikesSchema = PicLikeSchema(many=True)
 
 
 @picapi.route('/', methods=['GET'])
@@ -109,8 +112,14 @@ def get_pic_comments(pic_id):
 @picapi.route('/pic/<pic_id>/like', methods=['POST'])
 def add_like(pic_id):
     try:
-        pic = Pic.query.filter_by(pic_id=pic_id).first()
-        pic.add_like()
+        like = request.json['like']
+        username = request.json['username']
+        likeCheck = PicLikes.query.filter_by(username=username).first()
+        if likeCheck:
+            return jsonify({"Error": "Like was added"}), 403
+        picLike = PicLikes(like, username, pic_id)
+        db.session.add(picLike)
+        db.session.commit()
         msg = {"Success": "Like added"}
         return jsonify(msg), 201
     except Exception:
@@ -118,13 +127,14 @@ def add_like(pic_id):
         return jsonify(msg), 500
 
 
-@picapi.route('/pic/<pic_id>/dislike', methods=['POST'])
-def add_dislike(pic_id):
+@picapi.route('/pic/<pic_id>/likes', methods=['GET'])
+def get_pic_likes(pic_id):
     try:
-        pic = Pic.query.filter_by(pic_id=pic_id).first()
-        pic.add_dislike()
-        msg = {"Success": "Dislike added"}
-        return jsonify(msg), 201
+        piccheck = Pic.query.filter_by(pic_id=pic_id).first()
+        if not piccheck:
+            return jsonify({"Error": "Failed"}), 403
+        picLikes = PicLikes.query.filter_by(pic_id=pic_id).all()
+        results = picLikesSchema.dump(picLikes)
+        return jsonify({"{} likes and dislikes".format(pic_id): results})
     except Exception:
-        msg = {"Error": "Failed"}
-        return jsonify(msg), 500
+        return jsonify({"Error": "Failed to retrieve likes"}), 500

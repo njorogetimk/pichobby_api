@@ -94,25 +94,21 @@ class BasicTestCase(unittest.TestCase):
         rt2 = self.client.post('/pic/post', json=pic)
         self.assertEqual(rt2.status_code, 201)
 
-        rt3 = self.client.post('/pic/myid/like')
+        picLike = {
+            "like": True, "username": "mgeni"
+        }
+
+        rt3 = self.client.post('/pic/myid/like', json=picLike)
         self.assertEqual(rt3.status_code, 201)
 
-    def test_dislike_add(self):
-        user = {
-            "name": "mgeni", "username": "mgeni", "email": "r@e",
-            "password": "123"
-        }
-        rt1 = self.client.post('/add/user', json=user)
-        self.assertEqual(rt1.status_code, 201)
+        rt3 = self.client.post('/pic/myid/like', json=picLike)
+        self.assertEqual(rt3.status_code, 403)
 
-        pic = {
-            "pic_id": "myid", "link": "/to/no/where"
-        }
-        rt2 = self.client.post('/pic/post', json=pic)
-        self.assertEqual(rt2.status_code, 201)
+    def test_like_pic_get(self):
+        self.test_like_add()
+        rt1 = self.client.get('/pic/myid/likes')
 
-        rt3 = self.client.post('/pic/myid/dislike')
-        self.assertEqual(rt3.status_code, 201)
+        self.assertEqual(rt1.status_code, 200)
 
 
 if __name__ == '__main__':
