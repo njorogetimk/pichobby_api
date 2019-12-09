@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required
 from pichobby.api import picapi
 from pichobby.api.models import db
 from pichobby.api.models import Pic, User, Comment, PicLikes
@@ -8,6 +8,7 @@ from pichobby.api.models import CommentSchema, PicLikeSchema
 
 # Initialize the Schemas
 userSchema = UserSchema()
+usersSchema = UserSchema(many=True)
 picSchema = PicSchema()
 picsSchema = PicSchema(many=True)
 commentSchema = CommentSchema()
@@ -21,39 +22,30 @@ def home():
     return jsonify({"Pichobby Api": "My first API"}), 200
 
 
-@picapi.route('/pics', methods=['GET'])
-def get_pics():
-    pics = Pic.query.all()
-    result = picsSchema.dump(pics)
-    return jsonify(result), 200
-
-
-@picapi.route('/pic/post', methods=['POST'])
-def post_pic():
+@picapi.route('/login', methods=['GET'])
+def login():
     try:
-        pic_id = request.json['pic_id']
-        link = request.json['link']
-        pic = Pic(pic_id, link)
-        db.session.add(pic)
-        db.session.commit()
-        msg = {"Success": "New pic {} posted".format(pic_id)}
-        return jsonify(msg), 201
-    except Exception:
-        msg = {"Error": "Not created"}
-        return jsonify(msg), 500
+        auth = request.authorization
+        if not auth or not auth.username or not auth.password:
+            print(not auth)
+            return jsonify({"msg": "Invalid Login"}), 401
+        username = auth.username
+        password = auth.password
+        user = User.query.filter_by(username=username).first()
+        if not username or not user or not password:
+            return jsonify({"Message": "Invalid login parameters"}), 400
+        passcheck = user.verify_password(password)
+        if not passcheck:
+            return jsonify({"Message": "Invalid login parameters"}), 400
 
-
-@picapi.route('/pic/<pic_id>', methods=['GET'])
-def get_pic(pic_id):
-    try:
-        pic = Pic.query.filter_by(pic_id=pic_id).first()
-        return picSchema.jsonify(pic), 200
+        access_token = create_access_token(identity=username)
+        return jsonify(access_token), 200
     except Exception:
-        msg = {"Error": "Not found"}
-        return jsonify(msg), 404
+        return jsonify({"Message": "Failed Login"}), 400
 
 
 @picapi.route('/add/user', methods=['POST'])
+@jwt_required
 def add_user():
     try:
         name = request.json['name']
@@ -70,6 +62,13 @@ def add_user():
         return jsonify(msg), 500
 
 
+@picapi.route('/guests', methods=['GET'])
+def get_users():
+    users = User.query.filter_by(level=False).all()
+    result = usersSchema.dump(users)
+    return jsonify(result), 200
+
+
 @picapi.route('/user/<username>', methods=['GET'])
 def get_user(username):
     try:
@@ -80,7 +79,41 @@ def get_user(username):
         return jsonify(msg), 404
 
 
+@picapi.route('/pic/post', methods=['POST'])
+@jwt_required
+def post_pic():
+    try:
+        pic_id = request.json['pic_id']
+        link = request.json['link']
+        pic = Pic(pic_id, link)
+        db.session.add(pic)
+        db.session.commit()
+        msg = {"Success": "New pic {} posted".format(pic_id)}
+        return jsonify(msg), 201
+    except Exception:
+        msg = {"Error": "Not created"}
+        return jsonify(msg), 500
+
+
+@picapi.route('/pics', methods=['GET'])
+def get_pics():
+    pics = Pic.query.all()
+    result = picsSchema.dump(pics)
+    return jsonify(result), 200
+
+
+@picapi.route('/pic/<pic_id>', methods=['GET'])
+def get_pic(pic_id):
+    try:
+        pic = Pic.query.filter_by(pic_id=pic_id).first()
+        return picSchema.jsonify(pic), 200
+    except Exception:
+        msg = {"Error": "Not found"}
+        return jsonify(msg), 404
+
+
 @picapi.route('/post/comment', methods=['POST'])
+@jwt_required
 def post_comment():
     try:
         ctext = request.json['ctext']
@@ -111,13 +144,17 @@ def get_pic_comments(pic_id):
 
 
 @picapi.route('/pic/<pic_id>/like', methods=['POST'])
+@jwt_required
 def add_like(pic_id):
     try:
         like = request.json['like']
         username = request.json['username']
-        likeCheck = PicLikes.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"Error": "User not found"}), 404
+        likeCheck = PicLikes.query.filter_by(username=username).filter_by(pic_id=pic_id).first()
         if likeCheck:
-            return jsonify({"Error": "Like was added"}), 403
+            return jsonify({"Error": "Like already added"}), 200
         picLike = PicLikes(like, username, pic_id)
         db.session.add(picLike)
         db.session.commit()
@@ -141,19 +178,14 @@ def get_pic_likes(pic_id):
         return jsonify({"Error": "Failed to retrieve likes"}), 500
 
 
-@picapi.route('/login', methods=['POST'])
-def login():
+@picapi.route('/<username>/mylikes', methods=['GET'])
+def get_mylikes(username):
     try:
-        username = request.json.get('username', None)
-        password = request.json.get('password', None)
         user = User.query.filter_by(username=username).first()
-        if not username or not user or not password:
-            return jsonify({"Message": "Invalid login parameters"}), 400
-        passcheck = user.verify_password(password)
-        if not passcheck:
-            return jsonify({"Message": "Invalid login parameters"}), 400
-
-        access_token = create_access_token(identity=username)
-        return jsonify(access_token), 200
+        if not user:
+            return jsonify({'Error': "User not found"}), 404
+        piclikes = PicLikes.query.filter_by(username=username).all()
+        results = picLikesSchema.dump(piclikes)
+        return jsonify(results), 200
     except Exception:
-        return jsonify({"Message": "Failed Login"}), 400
+        return jsonify({"Error": "Failed to retrieve likes"}), 500
