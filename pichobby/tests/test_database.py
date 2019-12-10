@@ -1,6 +1,6 @@
 import unittest
 from pichobby import create_app, db
-from pichobby.api.models import User, Pic, Comment, PicLikes
+from pichobby.api.models import Users, Pic, Comment, PicLikes
 
 
 class BasicTestCase(unittest.TestCase):
@@ -16,8 +16,8 @@ class BasicTestCase(unittest.TestCase):
         self.app_context.pop()
 
     def test_User(self):
-        admin = User('tim', 'tim', 'm@r.co', '123', True)
-        guest = User('njosh', 'njosh', 'r@g.com', '345')
+        admin = Users('tim', 'tim', 'm@r.co', '123', True)
+        guest = Users('njosh', 'njosh', 'r@g.com', '345')
         db.session.add(admin)
         db.session.add(guest)
         try:
@@ -44,7 +44,7 @@ class BasicTestCase(unittest.TestCase):
     def test_Comment(self):
         username = 'kin'
         pic_id = 'sunset1'
-        kin = User('kin', username, 'k@e', '123')
+        kin = Users('kin', username, 'k@e', '123')
         pic = Pic(pic_id, 'tohere')
         comment = Comment('here', username, pic_id)
         db.session.add(kin)
@@ -63,7 +63,7 @@ class BasicTestCase(unittest.TestCase):
     def test_Like(self):
         username = 'kin'
         pic_id = 'sunset1'
-        kin = User('kin', username, 'k@e', '123')
+        kin = Users('kin', username, 'k@e', '123')
         pic = Pic(pic_id, 'tohere')
         db.session.add(kin)
         db.session.add(pic)

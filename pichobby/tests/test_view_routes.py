@@ -1,7 +1,7 @@
 import unittest
 from base64 import b64encode
 from pichobby import create_app, db
-from pichobby.api.models import User
+from pichobby.api.models import Users
 
 global user, token, headers
 user = {
@@ -16,7 +16,7 @@ class BasicTestCase(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()
-        user = User('admin', 'admin', 'm@e', '123', True)
+        user = Users('admin', 'admin', 'm@e', '123', True)
         db.session.add(user)
         db.session.commit()
         self.client = self.app.test_client()

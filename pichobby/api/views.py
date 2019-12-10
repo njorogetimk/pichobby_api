@@ -6,7 +6,7 @@ from functools import wraps
 from pichobby import jwt
 from pichobby.api import picapi
 from pichobby.api.models import (
-    db, Pic, User, Comment, PicLikes, UserSchema, PicSchema, CommentSchema,
+    db, Pic, Users, Comment, PicLikes, UserSchema, PicSchema, CommentSchema,
     PicLikeSchema
 )
 
@@ -35,7 +35,7 @@ def admin_required(fn):
 
 @jwt.user_claims_loader
 def add_claims_to_access_token(identity):
-    user = User.query.filter_by(username=identity).first()
+    user = Users.query.filter_by(username=identity).first()
     if user.level:
         return {'roles': 'admin'}
     else:
@@ -56,7 +56,7 @@ def login():
             return jsonify({"msg": "Invalid Login"}), 401
         username = auth.username
         password = auth.password
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
         if not username or not user or not password:
             return jsonify({"Message": "Invalid login parameters"}), 400
         passcheck = user.verify_password(password)
@@ -78,7 +78,7 @@ def add_user():
         username = request.json['username']
         email = request.json['email']
         password = request.json['password']
-        user = User(name, username, email, password)
+        user = Users(name, username, email, password)
         db.session.add(user)
         db.session.commit()
         msg = {"Success": "User {} added".format(username)}
@@ -90,7 +90,7 @@ def add_user():
 
 @picapi.route('/guests', methods=['GET'])
 def get_users():
-    users = User.query.filter_by(level=False).all()
+    users = Users.query.filter_by(level=False).all()
     result = usersSchema.dump(users)
     return jsonify(result), 200
 
@@ -98,7 +98,7 @@ def get_users():
 @picapi.route('/user/<username>', methods=['GET'])
 def get_user(username):
     try:
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
         return userSchema.jsonify(user), 200
     except Exception:
         msg = {"Error": "Not found"}
@@ -175,7 +175,7 @@ def add_like(pic_id):
     try:
         like = request.json['like']
         username = request.json['username']
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
         if not user:
             return jsonify({"Error": "User not found"}), 404
         likeCheck = PicLikes.query.filter_by(username=username).filter_by(pic_id=pic_id).first()
@@ -207,7 +207,7 @@ def get_pic_likes(pic_id):
 @picapi.route('/<username>/mylikes', methods=['GET'])
 def get_mylikes(username):
     try:
-        user = User.query.filter_by(username=username).first()
+        user = Users.query.filter_by(username=username).first()
         if not user:
             return jsonify({'Error': "User not found"}), 404
         piclikes = PicLikes.query.filter_by(username=username).all()

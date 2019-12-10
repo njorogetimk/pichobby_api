@@ -3,9 +3,9 @@ from pichobby import db, ma
 from passlib.hash import pbkdf2_sha256 as phash
 
 
-class User(db.Model):
+class Users(db.Model):
     """
-    User Model; Both the Admin and Guests
+    Users Model; Both the Admin and Guests
     name: name of the user
     username: visible name of the user on the platform
     email: user's contact email
@@ -67,17 +67,17 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     ctext = db.Column(db.Text)
-    User = db.relationship('User', backref=db.backref(
+    User = db.relationship('Users', backref=db.backref(
         'comment', lazy='dynamic'
     ))
-    username = db.Column(db.String, db.ForeignKey('user.username'))
+    username = db.Column(db.String, db.ForeignKey('users.username'))
     date = db.Column(db.DateTime)
     Pic = db.relationship('Pic', backref=db.backref('comment', lazy='dynamic'))
     pic_id = db.Column(db.String, db.ForeignKey('pic.pic_id'))
 
     def __init__(self, ctext, username, pic_id):
         self.ctext = ctext
-        self.User = User.query.filter_by(username=username).first()
+        self.User = Users.query.filter_by(username=username).first()
         self.Pic = Pic.query.filter_by(pic_id=pic_id).first()
         self.date = posttime.utcnow()
 
@@ -94,10 +94,10 @@ class PicLikes(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     like = db.Column(db.Boolean)
-    User = db.relationship('User', backref=db.backref(
+    User = db.relationship('Users', backref=db.backref(
         'picLikes', lazy='dynamic'
     ))
-    username = db.Column(db.String, db.ForeignKey('user.username'))
+    username = db.Column(db.String, db.ForeignKey('users.username'))
     Pic = db.relationship('Pic', backref=db.backref(
         'picLikes', lazy='dynamic'
     ))
@@ -105,7 +105,7 @@ class PicLikes(db.Model):
 
     def __init__(self, like, username, pic_id):
         self.like = like
-        self.User = User.query.filter_by(username=username).first()
+        self.User = Users.query.filter_by(username=username).first()
         self.Pic = Pic.query.filter_by(pic_id=pic_id).first()
 
     def __repr__(self):
