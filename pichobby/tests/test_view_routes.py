@@ -1,5 +1,13 @@
 import unittest
+from base64 import b64encode
 from pichobby import create_app, db
+from pichobby.api.models import User
+
+global user, token, headers
+user = {
+    'name': "mgeni", 'username': "mgeni", 'password': "123",
+    'email': "m@d"
+}
 
 
 class BasicTestCase(unittest.TestCase):
@@ -8,6 +16,9 @@ class BasicTestCase(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()
+        user = User('admin', 'admin', 'm@e', '123', True)
+        db.session.add(user)
+        db.session.commit()
         self.client = self.app.test_client()
 
     def tearDown(self):
@@ -15,99 +26,91 @@ class BasicTestCase(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
-    def test_home(self):
+    def test_1_home(self):
         rt = self.client.get('/')
         self.assertEqual(rt.status_code, 200)
 
-    def test_pics(self):
-        rt = self.client.get('/pics')
-        self.assertEqual(rt.status_code, 200)
-
-    def test_pic_post(self):
-        pic = {
-            "pic_id": "myid", "link": "/to/no/where"
+    def test_a_login(self):
+        global token
+        upas = b64encode(("admin:123").encode('utf-8')).decode('utf-8')
+        headers = {
+            'Authorization': "Basic "+upas
         }
-        rt = self.client.post('/pic/post', json=pic)
-        self.assertEqual(rt.status_code, 201)
-        nopic = {"pic_id": "myid", "link": "/to/no/where"}
-        rt = self.client.post('/pic/post', json=nopic)
-        self.assertEqual(rt.status_code, 500)
+        rt2 = self.client.get('/login', headers=headers)
+        token = rt2.data.decode().strip().strip("\"")
+        self.assertEqual(rt2.status_code, 200)
 
-    def test_pic_get(self):
-        pic = {
-            "pic_id": "myid", "link": "/to/no/where"
+    def test_b_add_user(self):
+        global token, headers
+        self.test_a_login()
+        headers = {
+            'Authorization': "Bearer " + token
         }
-        rt = self.client.post('/pic/post', json=pic)
-        self.assertEqual(rt.status_code, 201)
-        rt = self.client.get('pic/myid')
-        self.assertEqual(rt.status_code, 200)
-
-    def test_user_add(self):
-        user = {
-            "name": "mgeni", "username": "mgeni", "email": "r@e",
-            "password": "123"
-        }
-        rt = self.client.post('/add/user', json=user)
-        self.assertEqual(rt.status_code, 201)
-
-    def test_user_get(self):
-        self.test_user_add()
-        rt = self.client.get('/user/mgeni')
-        self.assertEqual(rt.status_code, 200)
-
-    def test_comment_post(self):
-        user = {
-            "name": "mgeni", "username": "mgeni", "email": "r@e",
-            "password": "123"
-        }
-        rt1 = self.client.post('/add/user', json=user)
+        rt1 = self.client.post('/add/user', json=user, headers=headers)
         self.assertEqual(rt1.status_code, 201)
 
-        pic = {
-            "pic_id": "myid", "link": "/to/no/where"
+    def test_c_get_users(self):
+        self.test_b_add_user()
+        rt1 = self.client.get('/guests')
+        self.assertEqual(rt1.status_code, 200)
+
+    def test_d_get_user(self):
+        self.test_b_add_user()
+        rt1 = self.client.get('/user/mgeni')
+        self.assertEqual(rt1.status_code, 200)
+
+    def test_e_post_pic(self):
+        self.test_b_add_user()
+        json1 = {
+            'pic_id': "pic1", 'link': "/to/here"
         }
-        rt2 = self.client.post('/pic/post', json=pic)
+        json2 = {
+            'pic_id': "pic2", 'link': "/to/here"
+        }
+        rt1 = self.client.post('/pic/post', json=json1, headers=headers)
+        rt2 = self.client.post('/pic/post', json=json2, headers=headers)
+        self.assertEqual(rt1.status_code, 201)
         self.assertEqual(rt2.status_code, 201)
 
-        comment = {
-            "ctext": "no comment", "username": "mgeni", "pic_id": "myid"
-        }
-        rt3 = self.client.post('/post/comment', json=comment)
-        self.assertEqual(rt3.status_code, 201)
+    def test_f_get_pics(self):
+        self.test_e_post_pic()
+        rt1 = self.client.get('/pics')
+        self.assertEqual(rt1.status_code, 200)
 
-    def test_comment_get(self):
-        self.test_comment_post()
-        rt = self.client.get('/pic/myid/comments')
-        self.assertEqual(rt.status_code, 200)
+    def test_g_get_pic(self):
+        self.test_e_post_pic()
+        rt1 = self.client.get('/pic/pic1')
+        self.assertEqual(rt1.status_code, 200)
 
-    def test_like_add(self):
-        user = {
-            "name": "mgeni", "username": "mgeni", "email": "r@e",
-            "password": "123"
+    def test_h_post_comment(self):
+        self.test_e_post_pic()
+        json = {
+            'ctext': "bad", 'username': "mgeni", 'pic_id': "pic1"
         }
-        rt1 = self.client.post('/add/user', json=user)
+        rt1 = self.client.post('/post/comment', json=json, headers=headers)
         self.assertEqual(rt1.status_code, 201)
 
-        pic = {
-            "pic_id": "myid", "link": "/to/no/where"
+    def test_i_get_comments(self):
+        self.test_h_post_comment()
+        rt1 = self.client.get('/pic/pic1/comments')
+        self.assertEqual(rt1.status_code, 200)
+
+    def test_j_post_like(self):
+        self.test_e_post_pic()
+        json = {
+            'like': True, 'username': "mgeni"
         }
-        rt2 = self.client.post('/pic/post', json=pic)
-        self.assertEqual(rt2.status_code, 201)
+        rt1 = self.client.post('/pic/pic1/like', json=json, headers=headers)
+        self.assertEqual(rt1.status_code, 201)
 
-        picLike = {
-            "like": True, "username": "mgeni"
-        }
+    def test_k_get_pic_like(self):
+        self.test_j_post_like()
+        rt1 = self.client.get('/pic/pic1/likes')
+        self.assertEqual(rt1.status_code, 200)
 
-        rt3 = self.client.post('/pic/myid/like', json=picLike)
-        self.assertEqual(rt3.status_code, 201)
-
-        rt3 = self.client.post('/pic/myid/like', json=picLike)
-        self.assertEqual(rt3.status_code, 403)
-
-    def test_like_pic_get(self):
-        self.test_like_add()
-        rt1 = self.client.get('/pic/myid/likes')
-
+    def test_l_get_user_likes(self):
+        self.test_j_post_like()
+        rt1 = self.client.get('/mgeni/mylikes')
         self.assertEqual(rt1.status_code, 200)
 
 
