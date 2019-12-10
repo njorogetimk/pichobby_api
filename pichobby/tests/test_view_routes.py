@@ -48,6 +48,15 @@ class BasicTestCase(unittest.TestCase):
         }
         rt1 = self.client.post('/add/user', json=user, headers=headers)
         self.assertEqual(rt1.status_code, 201)
+        # Missing JSON
+        user1 = {
+            'name': "mgeni", 'username': "mgeni", 'password': "123"
+        }
+        rt2 = self.client.post('/add/user', json=user1, headers=headers)
+        self.assertEqual(rt2.status_code, 400)
+        # Duplicate user
+        rt3 = self.client.post('/add/user', json=user, headers=headers)
+        self.assertEqual(rt3.status_code, 200)
 
     def test_c_get_users(self):
         self.test_b_add_user()
@@ -58,6 +67,9 @@ class BasicTestCase(unittest.TestCase):
         self.test_b_add_user()
         rt1 = self.client.get('/user/mgeni')
         self.assertEqual(rt1.status_code, 200)
+        # None existing user
+        rt2 = self.client.get('/user/mgen')
+        self.assertEqual(rt2.status_code, 404)
 
     def test_e_post_pic(self):
         self.test_b_add_user()
@@ -67,10 +79,13 @@ class BasicTestCase(unittest.TestCase):
         json2 = {
             'pic_id': "pic2", 'link': "/to/here"
         }
+        json3 = {'link': "/to/here"}
         rt1 = self.client.post('/pic/post', json=json1, headers=headers)
         rt2 = self.client.post('/pic/post', json=json2, headers=headers)
+        rt3 = self.client.post('/pic/post', json=json3, headers=headers)
         self.assertEqual(rt1.status_code, 201)
         self.assertEqual(rt2.status_code, 201)
+        self.assertEqual(rt3.status_code, 400)  # Missing JSON info
 
     def test_f_get_pics(self):
         self.test_e_post_pic()
@@ -81,6 +96,9 @@ class BasicTestCase(unittest.TestCase):
         self.test_e_post_pic()
         rt1 = self.client.get('/pic/pic1')
         self.assertEqual(rt1.status_code, 200)
+        # None existing picture
+        rt2 = self.client.get('/pic/nopicpost')
+        self.assertEqual(rt2.status_code, 404)
 
     def test_h_post_comment(self):
         self.test_e_post_pic()
@@ -89,11 +107,20 @@ class BasicTestCase(unittest.TestCase):
         }
         rt1 = self.client.post('/post/comment', json=json, headers=headers)
         self.assertEqual(rt1.status_code, 201)
+        # Missing JSON info
+        json1 = {
+            'username': "mgeni", 'pic_id': "pic1"
+        }
+        rt2 = self.client.post('/post/comment', json=json1, headers=headers)
+        self.assertEqual(rt2.status_code, 400)
 
     def test_i_get_comments(self):
         self.test_h_post_comment()
         rt1 = self.client.get('/pic/pic1/comments')
         self.assertEqual(rt1.status_code, 200)
+        # Missing Picture
+        rt2 = self.client.get('/pic/nopicpost/comments')
+        self.assertEqual(rt2.status_code, 404)
 
     def test_j_post_like(self):
         self.test_e_post_pic()
