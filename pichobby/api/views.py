@@ -9,6 +9,8 @@ from pichobby.api.models import (
     db, Pic, Users, Comment, PicLikes, UserSchema, PicSchema, CommentSchema,
     PicLikeSchema
 )
+import os
+import markdown
 
 # Initialize the Schemas
 userSchema = UserSchema()
@@ -44,7 +46,12 @@ def add_claims_to_access_token(identity):
 
 @picapi.route('/', methods=['GET'])
 def home():
-    return jsonify({"Pichobby Api": "My first API"}), 200
+    filePath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    mdFile = filePath+'/README.md'
+    with open(mdFile) as markdown_file:
+        content = markdown_file.read()
+    documentation = markdown.markdown(content)
+    return jsonify({"Pichobby Api": documentation}), 200
 
 
 @picapi.route('/login', methods=['GET'])
