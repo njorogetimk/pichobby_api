@@ -1,5 +1,8 @@
 from flask import jsonify, request
 from flask_jwt_extended import create_access_token, jwt_required
+from flask_jwt_extended import get_jwt_claims, verify_jwt_in_request
+from functools import wraps
+from pichobby import jwt
 from pichobby.api import picapi
 from pichobby.api.models import db
 from pichobby.api.models import Pic, User, Comment, PicLikes
@@ -15,6 +18,27 @@ commentSchema = CommentSchema()
 commentsSchema = CommentSchema(many=True)
 picLikeSchema = PicLikeSchema()
 picLikesSchema = PicLikeSchema(many=True)
+
+
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        claims = get_jwt_claims()
+        if claims['roles'] != 'admin':
+            return jsonify(msg='Admins only!'), 403
+        else:
+            return fn(*args, **kwargs)
+    return wrapper
+
+
+@jwt.user_claims_loader
+def add_claims_to_access_token(identity):
+    user = User.query.filter_by(username=identity).first()
+    if user.level:
+        return {'roles': 'admin'}
+    else:
+        return {'roles': 'guest'}
 
 
 @picapi.route('/', methods=['GET'])
@@ -46,6 +70,7 @@ def login():
 
 @picapi.route('/add/user', methods=['POST'])
 @jwt_required
+@admin_required
 def add_user():
     try:
         name = request.json['name']
