@@ -1,13 +1,14 @@
 from flask import jsonify, request
-from flask_jwt_extended import create_access_token, jwt_required
-from flask_jwt_extended import get_jwt_claims, verify_jwt_in_request
+from flask_jwt_extended import (
+    create_access_token, jwt_required, get_jwt_claims, verify_jwt_in_request,
+)
 from functools import wraps
 from pichobby import jwt
 from pichobby.api import picapi
-from pichobby.api.models import db
-from pichobby.api.models import Pic, User, Comment, PicLikes
-from pichobby.api.models import UserSchema, PicSchema
-from pichobby.api.models import CommentSchema, PicLikeSchema
+from pichobby.api.models import (
+    db, Pic, User, Comment, PicLikes, UserSchema, PicSchema, CommentSchema,
+    PicLikeSchema
+)
 
 # Initialize the Schemas
 userSchema = UserSchema()
